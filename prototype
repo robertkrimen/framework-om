@@ -1,0 +1,136 @@
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+
+
+package Fw::Om::Manifest;
+
+package Fw::Om::SetupRenderContext;
+
+package Fw::Om::Setup;
+
+package Fw::Om::Render;
+
+package Fw::Om::Plugin::Setup; # This is special
+
+sub parse_manifest {
+
+    # Set dir or file, parse comment, etc.
+
+}
+
+package Fw::Om::Plugin::Render; # This is special
+
+package Fw::Om::Plugin;
+
+package Fw::Om::Plugin::Starter;
+
+sub register {
+    my ($factory) = @_;
+
+    # General purpose stuff?
+}
+
+sub for_setup_manifest {
+    my ($factory, $manifest) = @_;
+
+    my $identifier = $factory->identifier;
+
+    # Maybe make parser('Setup') the default?
+
+    $manifest->include( {}, parser('Setup'), <<_END_ );
+run
+run/root
+run/tmp
+assets
+assets/root
+assets/root/static
+assets/root/static/css
+assets/root/static/js
+assets/tt
+_END_
+
+    $manifest->include(
+        "assets/root/static/css/$identifier.css" => 'starter/base.css',
+
+        "assets/tt/frame.tt.html" => 'starter/frame.tt.html',
+
+        "assets/tt/common.tt.html" => 'starter/common.tt.html',
+    );
+}
+
+sub define_setup_action {
+    my ($factory, $dispatcher) = @_;
+
+    $dispatcher->under( 'starter' => sub {
+
+        $dispatcher->on( 'base.css' => set( content => <<_END_ ) );
+body, table {
+    font-family: Verdana, Arial, sans-serif;
+    background-color: #fff;
+}
+
+a, a:hover, a:active, a:visited {
+    text-decoration: none;
+    font-weight: bold;
+    color: #436b95;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+table.bare td {
+    border: none;
+}
+
+ul.bare {
+    margin: 0;
+    padding: 0;
+}
+
+ul.bare li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+div.clear {
+    clear: both;
+}
+_END_
+
+        $dispatcher->on( 'base.js' => set( content => <<_END_ ) );
+_END_
+
+    });
+}
+
+sub for_render_manifest {
+    my ($factory, $manifest, $dispatcher) = @_;
+
+    $manifest->include( { render => 'tt', }, <<_END_ );
+/
+_END_
+
+    $manifest->include( { render => 'tt', }, parser('Render::TT'), <<_END_);
+/about tt/about.tt.html
+_END_
+
+    # set => { ... }, parser => sub { ... }, source => <<_END_
+}
+
+package Fw::Om::Plugin::Render::TT;
+
+sub register {
+}
+
+sub define_render_action {
+    my ($factory, $dispatcher) = @_;
+
+    $dispatcher->under( 'tt' => sub {
+        # Render tt/
+    } );
+}
+

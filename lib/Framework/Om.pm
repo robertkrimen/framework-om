@@ -5,7 +5,7 @@ use strict;
 
 =head1 NAME
 
-Framework::Om - The great new Framework::Om!
+Framework::Om -
 
 =head1 VERSION
 
@@ -15,38 +15,26 @@ Version 0.01
 
 our $VERSION = '0.01';
 
+use MooseX::Scaffold;
+MooseX::Scaffold->setup_scaffolding_import;
 
-=head1 SYNOPSIS
+use Framework::Om::Factory;
+use Framework::Om::Kit;
 
-Quick summary of what the module does.
+sub SCAFFOLD {
+    my $class = shift;
 
-Perhaps a little code snippet.
+    $class->extends('Framework::Om::Kit');
 
-    use Framework::Om;
+#    $class->with('Framework::Om::Role::Kit');
 
-    my $foo = Framework::Om->new();
-    ...
+    $class->class_has(factory => qw/is ro isa Framework::Om::Factory/, default => sub {
+        return Framework::Om::Factory->new(kit_class => $class->name);
+    });
 
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
-
-=head1 FUNCTIONS
-
-=head2 function1
-
-=cut
-
-sub function1 {
+    $class->name->factory->prepare_factory(@_);
 }
 
-=head2 function2
-
-=cut
-
-sub function2 {
-}
 
 =head1 AUTHOR
 
