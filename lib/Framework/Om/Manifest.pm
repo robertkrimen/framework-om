@@ -56,7 +56,9 @@ sub include {
             my $path = $_;
             my %entry;
             %entry = %{ shift() } if ref $_[0] eq 'HASH';
-            $self->add(path => $_ => %entry);
+            # FIXME Should we do it this way?
+            my $comment = delete $entry{comment};
+            $self->add(path => $_, comment => $comment, stash => { %entry });
         }
     }
 }
@@ -77,5 +79,9 @@ use Moose;
 has path => qw/is ro required 1/;
 has comment => qw/is ro isa Maybe[Str]/;
 has stash => qw/is ro required 1 isa HashRef/, default => sub { {} };
+
+sub content {
+    return shift->stash->{content};
+}
 
 1;

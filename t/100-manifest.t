@@ -9,6 +9,8 @@ use Framework::Om::Manifest;
 
 plan qw/no_plan/;
 
+ok(1);
+
 {
     my $manifest = Framework::Om::Manifest->new;
     $manifest->include(<<_END_);

@@ -4,6 +4,30 @@ use strict;
 use warnings;
 
 
+package Fw::Om::Kit;
+
+sub prepare_render {
+
+    my $self = shift;
+    my ($path, $context) = @_;
+
+    $self->load_render_context( $path, $context );
+}
+
+sub render {
+
+    my $self = shift;
+    my ($path) = @_;
+
+    my $context = $self->new_render_context( $path );
+
+    $self->prepare_render( $path, $context );
+
+    $self->dispatch_render( $path, $context );
+
+    return $self->finalize_render( $path, $context );
+}
+
 package Fw::Om::Manifest;
 
 package Fw::Om::SetupRenderContext;
@@ -23,6 +47,115 @@ sub parse_manifest {
 package Fw::Om::Plugin::Render; # This is special
 
 package Fw::Om::Plugin;
+
+package Fw::Om::Plugin::Starter;
+
+use Fw::Om::Plugin;
+
+define->setup->manifest(sub {
+
+    my ($ctl) = @_;
+
+    my $identifier = $ctl->identifier;
+
+    $ctl->include( parser('Setup'), <<_END_ );
+run
+run/root
+run/tmp
+assets
+assets/root
+assets/root/static
+assets/root/static/css
+assets/root/static/js
+assets/tt
+_END_
+
+    $ctl->include(
+        "assets/root/static/css/$identifier.css" => 'starter/base.css',
+
+        "assets/tt/frame.tt.html" => 'starter/frame.tt.html',
+
+        "assets/tt/common.tt.html" => 'starter/common.tt.html',
+    );
+
+});
+
+define->setup->action(sub {
+
+    my ($ctl) = @_;
+
+    $ctl->include( { -prefix => 'starter' },
+
+        'base.css' => \ <<_END_, # { content => ... }
+body, table {
+    font-family: Verdana, Arial, sans-serif;
+    background-color: #fff;
+}
+
+a, a:hover, a:active, a:visited {
+    text-decoration: none;
+    font-weight: bold;
+    color: #436b95;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+table.bare td {
+    border: none;
+}
+
+ul.bare {
+    margin: 0;
+    padding: 0;
+}
+
+ul.bare li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+div.clear {
+    clear: both;
+}
+_END_
+
+        'base.js' => \<<_END_,
+_END_
+
+    );
+
+});
+
+define->render->manifest(sub {
+
+    my ($ctl) = @_;
+
+    $ctl->include( parser('Render::TT'), <<_END_ );
+/
+/about tt/about.tt.html
+_END_
+
+});
+
+package Fw::Om::Plugin::Render::TT;
+
+sub register {
+}
+
+define->render->action(sub {
+
+    my ($ctl) = @_;
+
+    $ctl->under( 'tt' => sub {
+        # Render tt/
+    } );
+
+});
+
+__END__
 
 package Fw::Om::Plugin::Starter;
 

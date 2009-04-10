@@ -7,7 +7,7 @@ use Test::Most;
 
 plan qw/no_plan/;
 
-package Project;
+package t::Project;
 
 use Moose;
 use MooseX::ClassAttribute;
@@ -19,8 +19,9 @@ sub name { 'Project' }
 
 package main;
 
-my $project = Project->new;
+my $project = t::Project->new;
 
-ok($project);
-ok($project->factory);
-ok($project->_config);
+ok( $project );
+ok( $project->factory );
+ok( $project->_config );
+like( $project->setup_manifest->entry( 'assets/root/static/css/project.css' )->content, qr/text-decoration: underline/ );

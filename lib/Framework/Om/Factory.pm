@@ -15,6 +15,48 @@ sub plugins {
     return @{ shift->_plugins };
 }
 
+has _setup_action => qw/is ro isa HashRef/, default => sub { {} };
+
+has _render_action => qw/is ro isa HashRef/, default => sub { {} };
+
+sub setup_action {
+    my $self = shift;
+    return $self->_setup_action unless @_;
+    
+    $self->_action( $self->_setup_action, @_ );
+}
+
+sub render_action {
+    my $self = shift;
+    return $self->_render_action unless @_;
+
+    $self->_action( $self->_render_action, @_ );
+}
+
+sub _action {
+    my $self = shift;
+    my ($action_manifest, $entry, $action_path) = @_;
+
+    my $action = $action_manifest->{$action_path};
+
+    return unless $action;
+
+    if (ref $action eq 'HASH') {
+        while (my ($key, $value) = each %$action) {
+            $entry->stash->{$key} = $value;
+        }
+    }
+    elsif (ref $action eq 'CODE') {
+        $action->($entry);
+    }
+    elsif (ref $action eq 'SCALAR') {
+        $entry->stash->{content} = $$action;
+    }
+    else {
+        die "Don't know what to do with $action";
+    }
+}
+
 sub prepare_factory {
     my $self = shift;
 
@@ -36,6 +78,7 @@ sub prepare_factory {
             $plugin_class = "Framework::Om::Plugin::$plugin_class";
             push @{ $self->_plugins }, $plugin_class;
             MooseX::Scaffold->load_class($plugin_class);
+            # warn "This will expose errors? ", $plugin_class->isa( 'Framework::Om::Plugin' );
             $plugin_class->load_factory($self);
         }
     }
