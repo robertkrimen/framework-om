@@ -44,9 +44,18 @@ sub BUILD {
     $self->factory->prepare_kit( $self );
 }
 
+sub parse_render_manifest {
+    my $self = shift;
+    $self->factory->parse_render_manifest( $self, @_ );
+}
+
 sub load_render_context {
     my $self = shift;
     my ($context) = @_;
+
+    if (my $entry = $self->render_manifest->entry( $context->path )) {
+        $entry->copy_into( $context->stash );
+    }
 }
 
 sub prepare_render {
@@ -92,6 +101,10 @@ sub finalize_render {
 sub load_setup_context {
     my $self = shift;
     my ($context) = @_;
+
+    if (my $entry = $self->setup_manifest->entry( $context->path )) {
+        $entry->copy_into( $context->stash );
+    }
 }
 
 sub prepare_setup {
@@ -110,15 +123,22 @@ sub new_setup_context {
 
 sub setup {
     my $self = shift;
-    my ($path) = @_;
+    if (@_) {
+        my ($path) = @_;
 
-    my $context = $self->new_setup_context( $path );
+        my $context = $self->new_setup_context( $path );
 
-    $self->prepare_setup( $context );
+        $self->prepare_setup( $context );
 
-    $self->dispatch_setup( $context );
+        $self->dispatch_setup( $context );
 
-    return $self->finalize_setup( $context );
+        return $self->finalize_setup( $context );
+    }
+    else {
+        for my $path ($self->setup_manifest->all) {
+            $self->setup( $path );
+        }
+    }
 }
 
 sub dispatch_setup {
@@ -131,7 +151,19 @@ sub dispatch_setup {
 }
 
 sub finalize_setup {
+    my $self = shift;
     my ($context) = @_;
+
+    my $file = $self->home_dir->file( $context->path );
+    return if -e $file;
+    if ($context->stash->{content}) {
+        $file->parent->mkpath unless -d $file->parent;
+        $file->openw->print($context->stash->{content});
+    }
+    else {
+        my $dir = dir $file;
+        $dir->mkpath;
+    }
 }
 
 1;

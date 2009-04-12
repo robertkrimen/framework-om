@@ -18,7 +18,7 @@ sub load_factory {
         $class->has(_config => qw/is ro lazy_build 1 isa Config::JFDI/);
         $kit_class->meta->add_method(_build__config => sub {
             my $self = shift;
-            return Config::JFDI->new(path => $self->home_dir.'', name => $kit_class->identifier);
+            return Config::JFDI->new(path => $self->home_dir.'', name => $factory->identifier);
         });
         $kit_class->meta->add_method(config => sub {
             return shift->_config->get;

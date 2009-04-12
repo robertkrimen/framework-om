@@ -1,50 +1,9 @@
-package Framework::Om::Plugin;
+package Framework::Om::Define;
 
 use warnings;
 use strict;
 
-use Moose;
-use Framework::Om::Plugin;
-use MooseX::Scaffold;
-use Moose::Exporter;
-my ($import, $unimport) = Moose::Exporter->build_import_methods(
-    with_caller => [ 'define', 'parser' ],
-);
-MooseX::Scaffold->setup_scaffolding_import( chain_import => $import );
-
-use Framework::Om::Define;
-use Framework::Om::Factory;
-use Framework::Om::Kit;
-
-sub SCAFFOLD {
-    my $class = shift;
-
-    $class->extends( 'Framework::Om::Define::Plugin' );
-    $class->class_has( plugin_meta => qw/is ro isa HashRef/, default => sub { {} } );
-    $class->class_has( _define => qw/is ro lazy 1/, default => sub {
-        return Framework::Om::Define::define->new( plugin_class => $class->name );
-    } );
-}
-
-sub define {
-    my $caller = shift;
-    return $caller->_define( @_ );
-}
-
-sub parser {
-    my $caller = shift;
-    my $query = shift;
-    my $package = "Framework::Om::Plugin::$query";
-    
-    MooseX::Scaffold->load_class( $package );
-    return Framework::Om::Define::Parser->new( parser => $package->can( 'parse' ) );
-}
-
-1;
-
-__END__
-
-package Framework::Om::Plugin::_parser;
+package Framework::Om::Define::Parser;
 
 use Moose;
 
@@ -54,13 +13,13 @@ sub parse {
     return shift->parser->( @_ );
 }
 
-package Framework::Om::Plugin::_context;
+package Framework::Om::Define::Context;
 
 use Moose;
 
-has plugin_class => qw/is ro required 1/;
-has kit => qw/is ro required 0/, handles => [qw/ name identifier /];
-has factory => qw/is ro required 1/;
+has plugin_class => qw/is ro required 0/;
+has kit => qw/is ro required 0/;
+has factory => qw/is ro required 1/, handles => [qw/ name identifier /];
 
 has manifest => qw/is rw/;
 has dispatcher => qw/is rw/;
@@ -86,7 +45,7 @@ sub do {
     $self->action->{$path} = $action;
 }
 
-package Framework::Om::Plugin::_base;
+package Framework::Om::Define::Plugin;
 
 use Moose;
 use MooseX::ClassAttribute;
@@ -95,7 +54,7 @@ sub load_factory {
     my $self = shift;
     my $factory = shift;
 
-    my $context =  Framework::Om::Plugin::_context->new( factory => $factory, plugin_class => $self );
+    my $context =  Framework::Om::Define::Context->new( factory => $factory, plugin_class => $self );
 
     $context->action( $factory->setup_action );
     for my $code (@{ $self->plugin_meta->{setup_action} }) {
@@ -113,26 +72,48 @@ sub load_kit {
     my $factory = shift;
     my $kit = shift;
 
-    my $context =  Framework::Om::Plugin::_context->new( kit => $kit, factory => $factory, plugin_class => $self );
+    my $context = Framework::Om::Define::Context->new( kit => $kit, factory => $factory, plugin_class => $self );
 
     $context->manifest( $kit->setup_manifest );
     $context->dispatcher( $kit->setup_dispatcher );
-    for my $code (@{ $self->plugin_meta->{setup_path} }) {
-        $code->($context);
-    }
+    $self->load_setup_path( $context );
 
     $context->manifest( $kit->render_manifest );
     $context->dispatcher( $kit->render_dispatcher );
-    for my $code (@{ $self->plugin_meta->{render_path} }) {
+    $self->load_render_path( $context );
+}
+
+sub load_setup_manifest {
+    my $self = shift;
+    my $factory = shift;
+
+    my $context = Framework::Om::Define::Context->new( factory => $factory, plugin_class => $self );
+
+    $context->manifest( $factory->setup_manifest );
+    $context->dispatcher( undef );
+    $self->load_setup_path( $context );
+}
+
+sub load_setup_path {
+    my $self = shift;
+    my $context = shift;
+
+    for my $code (@{ $self->plugin_meta->{setup_path} }) {
         $code->($context);
     }
 }
 
-#sub define {
-#    return shift->_define( @_ );
-#}
+sub load_render_path {
+    my $self = shift;
+    my $context = shift;
 
-package Framework::Om::Plugin::_define;
+    for my $code (@{ $self->plugin_meta->{render_path} }) {
+        $code->($context);
+    }
+
+}
+
+package Framework::Om::Define::define;
 
 use Moose;
 
@@ -140,15 +121,15 @@ has plugin_class => qw/is ro/;
 
 has setup => qw/is ro lazy 1/, default => sub {
     my $self = shift;
-    return Framework::Om::Plugin::_define_setup->new( plugin_class => $self->plugin_class );
+    return Framework::Om::Define::define::setup->new( plugin_class => $self->plugin_class );
 };
 
 has render => qw/is ro lazy 1/, default => sub {
     my $self = shift;
-    return Framework::Om::Plugin::_define_render->new( plugin_class => $self->plugin_class );
+    return Framework::Om::Define::define::render->new( plugin_class => $self->plugin_class );
 };
 
-package Framework::Om::Plugin::_define_setup;
+package Framework::Om::Define::define::setup;
 
 use Moose;
 
@@ -166,7 +147,7 @@ sub action {
     push @{ $self->plugin_class->plugin_meta->{setup_action} }, $code;
 }
 
-package Framework::Om::Plugin::_define_render;
+package Framework::Om::Define::define::render;
 
 use Moose;
 

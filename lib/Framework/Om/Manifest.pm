@@ -29,6 +29,11 @@ sub entry {
     return $self->_entry_list->{$path};
 }
 
+sub all {
+    my $self = shift;
+    return sort { $a cmp $b } keys %{ $self->_entry_list };
+}
+
 sub add {
     my $self = shift;
     my $entry = $self->_entry(@_);
@@ -82,6 +87,14 @@ has stash => qw/is ro required 1 isa HashRef/, default => sub { {} };
 
 sub content {
     return shift->stash->{content};
+}
+
+sub copy_into {
+    my $self = shift;
+    my $hash = shift;
+    while (my ($key, $value) = each %{ $self->stash }) {
+        $hash->{$key} = $value;
+    }
 }
 
 1;

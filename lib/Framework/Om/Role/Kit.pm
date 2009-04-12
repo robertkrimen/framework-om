@@ -5,7 +5,7 @@ use warnings;
 
 use Moose::Role;
 
-requires 'name';
-requires 'identifier';
+#requires 'name';
+#requires 'identifier';
 
 1;
