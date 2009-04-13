@@ -30,22 +30,27 @@ sub parse {
     }
 }
 
-sub load_factory {
+has template => qw/is ro lazy_build 1/;
+sub _build_template {
     my $self = shift;
-    my $factory = shift;
-
-    my $kit_class = $factory->kit_class;
-
-    MooseX::Scaffold->scaffold(class => $kit_class, scaffolder => sub {
-        my $class = shift;
-        $class->has(tt => qw/is ro lazy_build 1 isa Template/);
-        $kit_class->meta->add_method(_build_tt => sub {
-            my $self = shift;
-            return Template->new({
-                INCLUDE_PATH => [ $self->home_dir.'' ],
-            });
-        });
+    return Template->new({
+        INCLUDE_PATH => [ $self->kit->home_dir.'' ],
     });
 }
+
+#sub load_factory {
+#    my $self = shift;
+#    my $factory = shift;
+
+#    my $kit_class = $factory->kit_class;
+
+#    MooseX::Scaffold->scaffold(class => $kit_class, scaffolder => sub {
+#        my $class = shift;
+#        $class->has(tt => qw/is ro lazy_build 1 isa Template/);
+#        $kit_class->meta->add_method(_build_tt => sub {
+#            my $self = shift;
+#        });
+#    });
+#}
 
 1;

@@ -23,6 +23,7 @@ use Framework::Om::Kit;
 
 sub SCAFFOLD {
     my $class = shift;
+    my %given = @_;
 
     $class->extends( 'Framework::Om::Kit' );
 
@@ -33,10 +34,10 @@ sub SCAFFOLD {
         default => sub {
             return Framework::Om::Factory->new( kit_class => $class->name );
         },
-        handles => [qw/ plugin /],
+#        handles => [qw/ plugin /],
     );
 
-    $class->name->factory->prepare_factory( @_ );
+    $class->name->factory->prepare_factory( @{ $given{arguments} } );
 }
 
 

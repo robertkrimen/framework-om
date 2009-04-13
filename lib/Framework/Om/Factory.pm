@@ -6,7 +6,8 @@ use warnings;
 use Moose;
 use MooseX::Types::Path::Class qw/File Dir/;
 
-use Framework::Om::Define;
+use Framework::Om::Factory::Plugin;
+use Framework::Om::Factory::Define;
 
 has [qw/ name identifier /] => qw/is rw isa Str/;
 
@@ -78,7 +79,8 @@ sub _action {
 sub prepare_factory {
     my $self = shift;
 
-    my @given = splice @_, 6, -4;
+#    my @given = splice @_, 6, -4;
+    my @given = @_;
     my @plugins;
 
     while (@given) {
@@ -95,17 +97,21 @@ sub prepare_factory {
         push @plugins, $argument;
     }
 
+
     while (@plugins) {
         my $plugin = shift @plugins;
-        my $plugin_class = $plugin;
-        unless ($plugin_class =~ s/^\+//) {
-            my $name = $plugin_class;
-            $plugin_class = "Framework::Om::Plugin::$plugin_class";
-            push @{ $self->plugin_list }, $plugin_class;
-            $self->plugin_map->{$name} = $self->plugin_map->{$plugin_class} = $plugin_class;
-            MooseX::Scaffold->load_class($plugin_class);
+        my $class = $plugin;
+        unless ($class =~ s/^\+//) {
+            my $name = $class;
+            $class = "Framework::Om::Plugin::$class";
+            my $factory_plugin = Framework::Om::Factory::Plugin->new(factory => $self, name => $name, class => $class);
+            push @{ $self->plugin_list }, $factory_plugin;
+            $self->plugin_map->{$name} = $self->plugin_map->{$class} = $factory_plugin;
+#            push @{ $self->plugin_list }, { name => $name, class => $class };
+#            $self->plugin_map->{$name} = $self->plugin_map->{$class} = $class;
+            MooseX::Scaffold->load_class($class);
             # warn "This will expose errors? ", $plugin_class->isa( 'Framework::Om::Plugin' );
-            $plugin_class->load_factory($self);
+            $factory_plugin->load_factory($self);
         }
     }
 
@@ -117,9 +123,10 @@ sub prepare_setup_manifest {
     my $self = shift;
 
     for my $plugin ($self->plugins) {
-        if ($plugin->can( 'load_setup_manifest' )) {
-            $plugin->load_setup_manifest( $self );
-        }
+        $plugin->load_setup_manifest;
+#        if ($plugin->{class}->can( 'load_setup_manifest' )) {
+#            $plugin->{class}->load_setup_manifest( $self );
+#        }
     }
 
     my $class = $self->kit_class;
@@ -151,10 +158,21 @@ sub prepare_kit {
     my $self = shift;
     my $kit = shift;
 
+#warn $kit;
     for my $plugin ($self->plugins) {
-        if ($plugin->can( 'load_kit' )) {
-            $plugin->load_kit( $self, $kit );
-        }
+        my ($name, $class) = ($plugin->name, $plugin->class);
+#warn "$name ", $kit->plugin( $name );
+#warn $class;
+        $kit->plugin_map->{$name} = $kit->plugin_map->{$class} = $class->new(kit => $kit, factory => $self);
+        $plugin->load_kit( $kit );
+#warn $result;
+#warn $kit->plugin_map->{$name};
+#warn "$name ", $kit->plugin( $name );
+#warn $kit->plugin_map->{$name};
+#warn $kit->plugin( $name );
+#        if ($class->can( 'load_kit' )) {
+#            $class->load_kit( $self, $kit );
+#        }
     }
 }
 
@@ -162,7 +180,7 @@ sub parse_render_manifest {
     my $self = shift;
     my $kit = shift;
 
-    my $context = Framework::Om::Define::Context->new( factory => $self, kit => $kit, );
+    my $context = Framework::Om::Factory::Define::Context->new( factory => $self, kit => $kit, );
     $context->manifest( $kit->render_manifest );
     $context->dispatcher( $kit->render_dispatcher );
 
@@ -170,8 +188,8 @@ sub parse_render_manifest {
     if (blessed $parser && $parser->can( 'parse' )) {
     }
     else {
-        my $plugin_class = $self->plugin( $parser );
-        $parser = Framework::Om::Define::Parser->new( parser => $plugin_class->can( 'parse' ) );
+        my $plugin = $self->plugin( $parser );
+        $parser = Framework::Om::Factory::Define::Parser->new( parser => $plugin->class->can( 'parse' ) );
     }
 
     $context->include( $parser => @_ );

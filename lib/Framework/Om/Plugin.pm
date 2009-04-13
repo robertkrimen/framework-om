@@ -4,41 +4,66 @@ use warnings;
 use strict;
 
 use Moose;
-use Framework::Om::Plugin;
 use MooseX::Scaffold;
-use Moose::Exporter;
-my ($import, $unimport) = Moose::Exporter->build_import_methods(
-    with_caller => [ 'define', 'parser' ],
-);
+use MooseX::ClassAttribute;
+#use Moose::Exporter;
+#my ($import, $unimport) = Moose::Exporter->build_import_methods(
+#    with_caller => [ 'define', 'parser' ],
+#);
+use Sub::Exporter;
+my ($import) = Sub::Exporter::build_exporter({
+    exports => [
+        define => sub {
+            my ($caller) = caller 3;
+            my $define = Framework::Om::Factory::Define::define->new( stash => Framework::Om::Plugin->plugin_stash->{$caller} ||= {} );
+            return sub {
+                return $define;
+            };
+        },
+        parser => sub {
+            my ($caller) = caller 3;
+            return sub {
+                my $query = shift;
+                my $package = "Framework::Om::Plugin::$query";
+                MooseX::Scaffold->load_class( $package );
+                return Framework::Om::Factory::Define::Parser->new( parser => $package->can( 'parse' ) );
+            };
+        },
+    ],
+    groups => {
+        default => [qw/ define parser /],
+    },
+});
 MooseX::Scaffold->setup_scaffolding_import( chain_import => $import );
 
-use Framework::Om::Define;
 use Framework::Om::Factory;
-use Framework::Om::Kit;
+use Framework::Om::Factory::Define;
+
+class_has plugin_stash => qw/is ro isa HashRef/, default => sub { {} };
 
 sub SCAFFOLD {
     my $class = shift;
 
-    $class->extends( 'Framework::Om::Define::Plugin' );
-    $class->class_has( plugin_meta => qw/is ro isa HashRef/, default => sub { {} } );
-    $class->class_has( _define => qw/is ro lazy 1/, default => sub {
-        return Framework::Om::Define::define->new( plugin_class => $class->name );
-    } );
+    $class->extends( 'Framework::Om::Kit::Plugin' );
+#    $class->class_has( plugin_meta => qw/is ro isa HashRef/, default => sub { {} } );
+#    $class->class_has( _define => qw/is ro lazy 1/, default => sub {
+#        return Framework::Om::Factory::Define::define->new( plugin_class => $class->name );
+#    } );
 }
 
-sub define {
-    my $caller = shift;
-    return $caller->_define( @_ );
-}
+#sub define {
+#    my $caller = shift;
+#    return $caller->_define( @_ );
+#}
 
-sub parser {
-    my $caller = shift;
-    my $query = shift;
-    my $package = "Framework::Om::Plugin::$query";
-    
-    MooseX::Scaffold->load_class( $package );
-    return Framework::Om::Define::Parser->new( parser => $package->can( 'parse' ) );
-}
+#sub parser {
+#    my $caller = shift;
+#    my $query = shift;
+#    my $package = "Framework::Om::Plugin::$query";
+#    
+#    MooseX::Scaffold->load_class( $package );
+#    return Framework::Om::Factory::Define::Parser->new( parser => $package->can( 'parse' ) );
+#}
 
 1;
 

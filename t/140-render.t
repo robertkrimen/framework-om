@@ -35,7 +35,8 @@ $project->parse_render_manifest( 'Render::TT' => <<_END_ );
 _END_
 
 ok( $project->render_manifest->entry( '/this' ) );
-ok( $project->tt );
+ok( $project->plugin( 'Render::TT' ) );
+ok( $project->plugin( 'Render::TT' )->template );
 
 #for (qw(
 #    /

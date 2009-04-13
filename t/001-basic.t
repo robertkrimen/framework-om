@@ -25,7 +25,7 @@ ok( $project );
 ok( $project->factory );
 ok( $project->_config );
 ok( $project->plugin( 'Config::JFDI' ) );
-is( $project->plugin( 'Config::JFDI' ), 'Framework::Om::Plugin::Config::JFDI' );
+ok( $project->plugin( 'Config::JFDI' )->isa( 'Framework::Om::Plugin::Config::JFDI' ) );
 like( $project->setup_manifest->entry( 'assets/root/static/css/project.css' )->content, qr/text-decoration: underline/ );
 ok( t::Project->can( 'assets_dir' ) );
 ok( ! t::Project->can( 'assets_root_static_css_project_css_dir' ) );

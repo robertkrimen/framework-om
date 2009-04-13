@@ -14,6 +14,18 @@ use Framework::Om::Context;
 
 #with 'Framework::Om::Role::Kit';
 
+has plugin_list => qw/is ro required 1 isa ArrayRef/, default => sub { [] };
+has plugin_map => qw/is ro required 1 isa HashRef/, default => sub { {} };
+sub plugins {
+    return @{ shift->plugin_list };
+}
+sub plugin {
+    my $self = shift;
+    return $self->plugin_map unless @_;
+    my $name = shift;
+    return $self->plugin_map->{$name};
+}
+
 has home_dir => qw/is ro coerce 1 lazy_build 1/, isa => Dir;
 sub _build_home_dir {
     return Path::Class::Dir->new( './' )->absolute;
