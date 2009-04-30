@@ -14,14 +14,22 @@ package t::Project;
 use Moose;
 use MooseX::ClassAttribute;
 use Framework::Om qw/-name Project -identifier project Config::JFDI Starter Render::TT URI/;
-with 'Framework::Om::Role::Kit';
 
 package main;
+
+my $project = t::Project->new( home_dir => 't/assets/home' );
+ok( $project->config );
+is( $project->config->{uri}, 'http://example.com' );
+ok( $project->uri );
+ok( $project->rsc );
+is( $project->uri.'', 'http://example.com' );
+
+__END__
 
 use Directory::Scratch;
 my $scratch = Directory::Scratch->new;
 
-my $project = t::Project->new( home_dir => 't/assets/home' );
+my $project = t::Project->new;
 $project->run_root_dir( $scratch->base );
 
 ok( ! $project->render_manifest->entry( '/this' ) );
@@ -47,28 +55,3 @@ ok( $project->plugin( 'Render::TT' )->template );
 $project->render( '/' );
 ok( -e $scratch->file( 'index.html' ) );
 
-$project->render( { path => '/xyzzy', process => { plugin => 'Render::TT' }, postprocess => [ undef, ( file => 'XYZZY.html' ) ] } );
-ok( -e $scratch->file( 'XYZZY.html' ) );
-
-#for (qw(
-#    /
-#    /this.html
-#    /this
-#    /that/
-#    /comment-and-content
-#    /just-content
-#)) {
-#    ok($manifest->entry->{$_});
-#    is($manifest->entry->{$_}->path, $_);
-#}
-
-#is($manifest->entry->{'/this'}->comment, 'This is a comment for /this');
-#is($manifest->entry->{'/that/'}->comment, 'Comment with no gap');
-#is($manifest->entry->{'/comment-and-content'}->comment, 'This is the comment');
-
-#is($manifest->entry->{'/comment-and-content'}->content, 'comment-and-content.tt.html');
-#is($manifest->entry->{'/just-content'}->content, 'just-content.tt.html');
-
-#$project->render( '/' );
-
-ok(1);

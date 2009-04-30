@@ -84,6 +84,7 @@ use Moose;
 has path => qw/is ro required 1/;
 has comment => qw/is ro isa Maybe[Str]/;
 has stash => qw/is ro required 1 isa HashRef/, default => sub { {} };
+has process => qw/is rw isa Maybe[Str|HashRef]/;
 
 sub content {
     return shift->stash->{content};

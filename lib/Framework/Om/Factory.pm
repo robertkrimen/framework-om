@@ -104,7 +104,9 @@ sub prepare_factory {
         unless ($class =~ s/^\+//) {
             my $name = $class;
             $class = "Framework::Om::Plugin::$class";
-            my $factory_plugin = Framework::Om::Factory::Plugin->new(factory => $self, name => $name, class => $class);
+            my $config = shift @plugins if ref $plugins[0] eq 'HASH';
+            $config ||= {};
+            my $factory_plugin = Framework::Om::Factory::Plugin->new(factory => $self, name => $name, class => $class, config => $config);
             push @{ $self->plugin_list }, $factory_plugin;
             $self->plugin_map->{$name} = $self->plugin_map->{$class} = $factory_plugin;
 #            push @{ $self->plugin_list }, { name => $name, class => $class };
@@ -160,10 +162,10 @@ sub prepare_kit {
 
 #warn $kit;
     for my $plugin ($self->plugins) {
-        my ($name, $class) = ($plugin->name, $plugin->class);
+        my ($name, $class, $config) = ($plugin->name, $plugin->class, $plugin->config);
 #warn "$name ", $kit->plugin( $name );
 #warn $class;
-        $kit->plugin_map->{$name} = $kit->plugin_map->{$class} = $class->new(kit => $kit, factory => $self);
+        $kit->plugin_map->{$name} = $kit->plugin_map->{$class} = $class->new(kit => $kit, factory => $self, _config => $config);
         $plugin->load_kit( $kit );
 #warn $result;
 #warn $kit->plugin_map->{$name};

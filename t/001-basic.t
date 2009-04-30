@@ -12,7 +12,6 @@ package t::Project;
 use Moose;
 use MooseX::ClassAttribute;
 use Framework::Om qw/-name Project -identifier project Config::JFDI Starter/;
-with 'Framework::Om::Role::Kit';
 
 package main;
 

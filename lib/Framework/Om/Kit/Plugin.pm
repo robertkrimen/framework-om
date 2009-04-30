@@ -5,5 +5,6 @@ use MooseX::ClassAttribute;
 
 has factory => qw/is ro required 1/;
 has kit => qw/is ro required 1/;
+has _config => qw/is ro required 1/;
 
 1;

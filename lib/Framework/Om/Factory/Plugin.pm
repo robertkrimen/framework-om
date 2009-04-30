@@ -5,6 +5,7 @@ use MooseX::ClassAttribute;
 
 has name => qw/is ro required 1/;
 has class => qw/is ro required 1/;
+has config => qw/is ro required 1/;
 has factory => qw/is ro required 1/;
 
 sub stash {

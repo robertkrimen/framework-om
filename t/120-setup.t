@@ -5,9 +5,23 @@ use warnings;
 
 use Test::Most;
 
-use Framework::Om::Manifest;
-
 plan qw/no_plan/;
 
-ok(1);
+package t::Project;
 
+use Moose;
+use MooseX::ClassAttribute;
+use Framework::Om qw/-name Project -identifier project Config::JFDI Starter/;
+
+package main;
+
+use Directory::Scratch;
+my $scratch = Directory::Scratch->new;
+
+my $project = t::Project->new( home_dir => $scratch->base );
+
+ok( $project );
+$project->setup;
+
+ok( -d $scratch->file( 'run' ) );
+ok( -f $scratch->file( 'assets/root/static/css/project.css' ) );
