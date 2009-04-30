@@ -6,6 +6,7 @@ use warnings;
 use Moose;
 use MooseX::Types::Path::Class qw/File Dir/;
 
+use Framework::Om::Manifest;
 use Framework::Om::Factory::Plugin;
 use Framework::Om::Factory::Define;
 

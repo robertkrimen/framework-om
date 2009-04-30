@@ -47,7 +47,7 @@ ok( $project->plugin( 'Render::TT' )->template );
 $project->render( '/' );
 ok( -e $scratch->file( 'index.html' ) );
 
-$project->render( { path => '/xyzzy', process => { plugin => 'Render::TT' }, postprocess => [ undef, ( file => 'XYZZY.html' ) ] } );
+$project->render( { path => '/xyzzy', process => { plugin => 'Render::TT' }, post_process => $scratch->file( 'XYZZY.html' ) } );
 ok( -e $scratch->file( 'XYZZY.html' ) );
 
 #for (qw(

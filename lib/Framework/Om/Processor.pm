@@ -8,24 +8,17 @@ use Moose;
 use Path::Class;
 use MooseX::Types::Path::Class qw/Dir File/;
 
-use Framework::Om::Manifest;
-use Framework::Om::Dispatcher;
-use Framework::Om::Context;
+use Framework::Om::ProcessorContext;
+use Framework::Om::Catalog;
+
 use Clone qw/clone/;
 
 has kit => qw/is ro required 1/, handles => [qw/ plugin /];
-
-has manifest => qw/is ro lazy_build 1/;
-sub _build_manifest {
-    return Framework::Om::Manifest->new;
+has catalog => qw/is ro lazy_build 1/, handles => [qw/ manifest dispatcher /];
+sub _build_catalog {
+    my $self = shift;
+    return Framework::Om::Catalog->new( );
 }
-
-has dispatcher => qw/is ro lazy_build 1/;
-sub _build_dispatcher {
-    return Framework::Om::Dispatcher->new;
-}
-
-has postprocessor => qw/is ro isa HashRef/, default => sub { {} };
 
 sub load_context {
     my $self = shift;
@@ -49,12 +42,12 @@ sub new_context {
     my $given = shift;
     my $context;
     if (ref $given eq '') {
-        $context = Framework::Om::Context->new( path => $given, kit => $self->kit );
+        $context = Framework::Om::ProcessorContext->new( path => $given, kit => $self->kit );
     }
     elsif (ref $given eq 'HASH') {
             
-        $context = Framework::Om::Context->new( path => $given->{path}, kit => $self->kit );
-        $given->{$_} and $context->$_( $given->{$_} ) for qw/process postprocess stash/;
+        $context = Framework::Om::ProcessorContext->new( path => $given->{path}, kit => $self->kit );
+        $given->{$_} and $context->$_( $given->{$_} ) for qw/process post_process process_stash post_process_stash/;
     }
 
     return $context;
@@ -71,7 +64,7 @@ sub process {
 
         $self->_process( $context );
 
-        return $self->postprocess( $context );
+        return $self->post_process( $context );
     }
     else {
         for my $path ($self->manifest->all) {
@@ -102,37 +95,9 @@ sub dispatch {
     return $dispatch->run( $context );
 }
 
-sub lookup_postprocess {
-    my $self = shift;
-    my $do = shift;
-
-    $do = $self->postprocessor->{$do} while defined $do && ! ref $do;
-    return $do;
-}
-
-sub postprocess {
+sub post_process {
     my $self = shift;
     my ($context) = @_;
-
-    my ($do, @arguments);
-    $do = $context->postprocess;
-    if ($do) {
-        if (ref $do eq 'ARRAY') {
-            ($do, @arguments) = @$do;
-        }
-        elsif (! ref $do) {
-        }
-        else {
-            die "Don't know how to postprocess with $do";
-        }
-    }
-    $do = $self->lookup_postprocess( defined $do ? $do : 'DEFAULT' );
-
-    return unless defined $do;
-
-    die "Don't know how to postprocess with $do" unless ref $do eq 'CODE';
-
-    return $do->( $self, $context, @arguments );
 }
 
 1;

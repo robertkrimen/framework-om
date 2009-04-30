@@ -1,18 +1,15 @@
-package Framework::Om::Render;
+package Framework::Om::Processor::Does::DiskRender;
 
 use strict;
 use warnings;
 
-use Moose;
-extends 'Framework::Om::Processor';
+use Moose::Role;
 
-sub BUILD {
+requires qw/ base_dir /;
+
+sub post_process {
     my $self = shift;
-
-    $self->postprocessor->{DEFAULT} = 'write';
-    $self->postprocessor->{write} = sub {
-        my $self = shift;
-        my ($context, %given) = @_;
+    my $context = shift;
 
         my $result = $context->result;
         my $extension;
